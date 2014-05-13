@@ -30,10 +30,8 @@ case class InstanceType(name: String, isSpot: Boolean)
  * @param name A unique name such as c3.large per vendor
  * @param mem The total memory of a node
  * @param cpu The cpu count of a node normalized to aws CPUs
- * @param io The max sustained IOps of a node
- * @param vendor The name of the vendor such as amazon aws
  */
-case class NodeType(name: String, mem: Int, cpu: Int, io: Int, vendor: String)
+case class NodeType(name: String, mem: Int, cpu: Int)
 
 /**
  * Represents the basic elastic resource on which tasks can be executed.
