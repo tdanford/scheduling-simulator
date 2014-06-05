@@ -6,7 +6,7 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.tdanford.scheduling</groupId>
+        <groupId>org.bdgenomics.scheduling</groupId>
         <artifactId>scheduling</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>..</relativePath>

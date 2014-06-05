@@ -9,6 +9,7 @@ class ProvisionerImpl(world: World, params: Params) extends Provisioner {
       .sendIn(c.timeToStart)
       .notAfter[ResourceDead](rd => rd.resource == resource)
       .message(new ResourceAvailable(resource))
+    Some(resource)
   }
 
   override def killResource(r: Resource): Boolean = {

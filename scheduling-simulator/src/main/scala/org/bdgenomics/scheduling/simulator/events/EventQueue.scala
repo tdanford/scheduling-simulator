@@ -8,7 +8,7 @@ class EventQueue {
   private val eventSenders: mutable.ListBuffer[(Long, EventSender)] = mutable.ListBuffer()
 
   @tailrec final def dequeue: (Long, Event) = {
-    val event = eventSenders.zipWithIndex.maxBy(_._1)
+    val event = eventSenders.zipWithIndex.maxBy(_._1._1)
     eventSenders.remove(event._2)
     event._1._2.getMessage match {
       case None => dequeue

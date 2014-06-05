@@ -11,7 +11,7 @@ class World(dag: TaskDAG, seed: Long, params: Params, schedulerFactory: Schedule
 
   val provisioner = new ProvisionerImpl(this, params)
   val scheduler = schedulerFactory.factory(provisioner, dag)
-  var totalCost = 0
+  var totalCost = 0.0
   scheduler.start()
 
   // figure out the next timestep we are walking toward
@@ -33,6 +33,14 @@ class World(dag: TaskDAG, seed: Long, params: Params, schedulerFactory: Schedule
     event.sendIn(timeToDie)
       .message(new ResourceDead(resource))
     resource
+  }
+
+  def resourceShutdown(resource: Resource): Unit = {
+    resourcesOutstanding.remove(resource)
+  }
+
+  def createJob(resource: Resource, task: Task): Job = {
+    new JobImpl(task, resource, this)
   }
 
   def shouldFail(task: Task): Boolean = random.nextDouble() < task.failureRate

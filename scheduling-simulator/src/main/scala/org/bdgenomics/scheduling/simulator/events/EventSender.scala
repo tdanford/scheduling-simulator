@@ -7,7 +7,7 @@ class EventSender(now: Long,
                   test: () => Boolean = () => true) {
   def getMessage: Option[Event] = if (test()) event else None
 
-  def notAfter[T <: Event](filter: T => Boolean = _ => true): EventSender =
+  def notAfter[T <: Event](filter: T => Boolean = ((_: T) => true)): EventSender =
   new EventSender(now, sendAt, queue, event, () => test()
     && queue.between(now, sendAt).forall(e => !e.isInstanceOf[T] || !filter(e.asInstanceOf[T])))
 
