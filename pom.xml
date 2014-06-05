@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>scheduling-simulator</module>
+        <module>simulator</module>
     </modules>
 
     <properties>

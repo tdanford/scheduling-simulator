@@ -31,12 +31,12 @@ class GraphNode[T](val value: T) {
 
   def isRootNode: Boolean = incomingNodes.isEmpty
 
-  private def remove(node: GraphNode[T]) = {
+  private def removeNode(node: GraphNode[T]) = {
     incomingNodes -= node
   }
 
   def remove() = {
-    outgoingNodes.foreach(_.remove(this))
+    outgoingNodes.foreach(r => r.removeNode(this))
   }
 
   def pointTo(node: GraphNode[T]) = {
