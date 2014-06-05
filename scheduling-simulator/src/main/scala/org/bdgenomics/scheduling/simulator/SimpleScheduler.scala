@@ -29,7 +29,7 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
         dag.setTaskScheduled(task, false)
         provisioner.requestResource(resource.component)
       }
-      case None => {}
+      case _ => {}
     }
   }
 
