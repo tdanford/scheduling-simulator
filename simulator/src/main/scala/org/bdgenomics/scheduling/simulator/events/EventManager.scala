@@ -5,15 +5,16 @@ class EventManager {
   val eventQueue: EventQueue = new EventQueue()
   def now: Long = nowValue
 
-  def head: (Long, Long, Event) = {
-    val (time, event) = eventQueue.dequeue
-    val ret = (now, time, event)
-    nowValue = time
-    ret
+  def headOption: Option[(Long, Long, Event)] = {
+    eventQueue.dequeue match {
+      case None => None
+      case Some((time, event)) =>
+        val prevNow = now
+        nowValue = time
+        Some((prevNow, time, event))
+    }
   }
 
   def sendIn(timeStep: Long) : EventSender =
     new EventSender(now, timeStep + now, eventQueue)
-
-  def isEmpty = eventQueue.isEmpty
 }

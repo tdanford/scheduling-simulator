@@ -3,6 +3,7 @@ package org.bdgenomics.scheduling.simulator
 import org.bdgenomics.scheduling.simulator.events.{ResourceDead, EventManager}
 import java.util.Random
 import scala.collection.mutable
+import scala.annotation.tailrec
 
 class World(dag: TaskDAG, seed: Long, params: Params, schedulerFactory: SchedulerFactory) {
   val event = new EventManager
@@ -14,20 +15,22 @@ class World(dag: TaskDAG, seed: Long, params: Params, schedulerFactory: Schedule
   var totalCost = 0.0
   scheduler.start()
 
-  // figure out the next timestep we are walking toward
-  do {
-    event.head match {
-      case (now, time, e) => {
+  processStep()
+
+  @tailrec private def processStep() {
+    event.headOption match {
+      case Some((now, time, e)) =>
         val stepTime = time - now
         val stepCost = resourcesOutstanding.map(_.component.cost * stepTime).reduce(_ + _)
         totalCost += stepCost
         e.execute(scheduler, provisioner)
-      }
+        processStep()
+      case None => {}
     }
-  } while (!event.isEmpty)
+  }
 
   def createResource(component: Component): Resource = {
-    val timeToDie = (random.nextInt() * component.reliability).toLong
+    val timeToDie = random.nextInt().toLong * component.reliability.toLong
     val resource = new ResourceImpl(this, component)
     resourcesOutstanding.add(resource)
     event.sendIn(timeToDie)
