@@ -27,7 +27,7 @@ class World(dag: TaskDAG, seed: Long, params: Params, schedulerFactory: Schedule
   } while (!event.isEmpty)
 
   def createResource(component: Component): Resource = {
-    val timeToDie = (random.nextInt() * component.reliability).toLong
+    val timeToDie = random.nextInt().toLong * component.reliability.toLong
     val resource = new ResourceImpl(this, component)
     resourcesOutstanding.add(resource)
     event.sendIn(timeToDie)
