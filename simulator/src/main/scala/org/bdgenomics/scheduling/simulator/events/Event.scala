@@ -1,7 +1,7 @@
 package org.bdgenomics.scheduling.simulator.events
 
-import org.bdgenomics.scheduling.simulator.{Provisioner, Scheduler}
+import org.bdgenomics.scheduling.simulator.Scheduler
 
 trait Event {
-  def execute(s: Scheduler, p: Provisioner)
+  def execute(s: Scheduler)
 }

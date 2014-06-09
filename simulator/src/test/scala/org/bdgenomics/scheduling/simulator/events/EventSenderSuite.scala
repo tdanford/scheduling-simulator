@@ -19,7 +19,7 @@ class EventSenderSuite extends FunSuite {
     val goodEvent = new TestEvent()
     val supressedEvent = new TestEvent()
     new EventSender(0, 10, queue)
-      .notAfter[TestEvent](_ == goodEvent)
+      .notAfter(_ == goodEvent)
       .message(supressedEvent)
     new EventSender(0, 5, queue)
       .message(goodEvent)
@@ -32,7 +32,7 @@ class EventSenderSuite extends FunSuite {
 
     queue.dequeue match {
       case Some(_) => fail("Should not be able to dequeue a value after already dequeueing")
-      case None => {}
+      case None =>
     }
   }
 }

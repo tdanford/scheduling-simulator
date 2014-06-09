@@ -11,14 +11,15 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
   private def scheduleLiveTasks(): Unit = {
     dag.getLiveTasks.map {
       case (task: Task) => {
-        provisioner.requestResource(params.getComponents.head)
+        provisioner.requestResource(params.components.head)
       }
     }
   }
 
   override def resourceAvailable(resource: Resource): Unit = {
+    println("running resource available")
     val task = dag.getLiveTasks.head
-    dag.setTaskScheduled(task, true)
+    dag.setTaskScheduled(task, isScheduled = true)
     scheduledTo(resource) = task
     resource.execute(task)
   }
@@ -26,7 +27,7 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
   override def resourceDead(resource: Resource): Unit = {
     scheduledTo.remove(resource) match {
       case Some(task) => {
-        dag.setTaskScheduled(task, false)
+        dag.setTaskScheduled(task, isScheduled = false)
         provisioner.requestResource(resource.component)
       }
       case _ => {}

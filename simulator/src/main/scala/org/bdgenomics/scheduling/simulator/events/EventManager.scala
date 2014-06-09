@@ -15,6 +15,8 @@ class EventManager {
     }
   }
 
-  def sendIn(timeStep: Long) : EventSender =
+  def sendIn(timeStep: Long) : EventSender = {
+    assert(timeStep >= 0, "Cannot send an event in the past")
     new EventSender(now, timeStep + now, eventQueue)
+  }
 }
