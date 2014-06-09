@@ -6,4 +6,7 @@ class ResourceImpl(world: World, val component: Component) extends Resource {
 
   override def execute(t: Task): Job =
     world.createJob(this, t)
+
+  override def toString: String =
+    component.toString
 }

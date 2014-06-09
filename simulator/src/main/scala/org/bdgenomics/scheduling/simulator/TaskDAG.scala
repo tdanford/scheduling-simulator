@@ -17,5 +17,6 @@ case class TaskDAG(graph: Graph[Task]) {
   } else {
     graph.insert(value)
   }
+
   def getLiveTasks: Seq[Task] = graph.roots.filterNot(r => taskStatus.contains(r.value)).toSeq.map(_.value)
 }
