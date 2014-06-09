@@ -2,45 +2,56 @@ package org.bdgenomics.scheduling.simulator
 
 import collection.mutable
 
-class Graph[T] {
-    val roots : mutable.ListBuffer[GraphNode[T]] = mutable.ListBuffer()
+trait GraphLike[T] {
+  type Node
+  def insert(value: T): Node
+  def connect(node1: Node, node2: Node)
+  def remove(node: Node)
+}
 
-  def insert(value: T): GraphNode[T] = {
-    val node = new GraphNode[T](value)
+class Graph[T] extends GraphLike[T] {
+  class GraphNode(val value: T) {
+    private val incomingNodes: mutable.ListBuffer[GraphNode] = mutable.ListBuffer()
+    private val outgoingNodes: mutable.ListBuffer[GraphNode] = mutable.ListBuffer()
+
+    def isRootNode: Boolean = incomingNodes.isEmpty
+
+    private def removeNode(node: GraphNode) = {
+      incomingNodes -= node
+    }
+
+    def remove(): Seq[GraphNode] = {
+      outgoingNodes.foreach(r => r.removeNode(this))
+      outgoingNodes
+    }
+
+    def pointTo(node: GraphNode) = {
+      node.incomingNodes += this
+      outgoingNodes += node
+    }
+  }
+
+  type Node = GraphNode
+
+  val roots : mutable.ListBuffer[GraphNode] = mutable.ListBuffer()
+
+  def insert(value: T): Node = {
+    val node = new GraphNode(value)
     roots += node
     node
   }
 
-  def connect(node1: GraphNode[T], node2: GraphNode[T]) = {
-    node1.pointTo(node2)
+  def connect(node1: Node, node2: Node) = {
     if (node2.isRootNode) {
       roots -= node2
     }
+    node1.pointTo(node2)
   }
 
-  def remove(node: GraphNode[T]) =
+  def remove(node: Node) =
     if (roots.contains(node)) {
       roots -= node
-      node.remove()
+      val nodes = node.remove()
+      for (node <- nodes if node.isRootNode) roots += node
     } else throw new IllegalArgumentException("Can only remove a node which is a root")
-}
-
-class GraphNode[T](val value: T) {
-  private val incomingNodes: mutable.ListBuffer[GraphNode[T]] = mutable.ListBuffer()
-  private val outgoingNodes: mutable.ListBuffer[GraphNode[T]] = mutable.ListBuffer()
-
-  def isRootNode: Boolean = incomingNodes.isEmpty
-
-  private def removeNode(node: GraphNode[T]) = {
-    incomingNodes -= node
-  }
-
-  def remove() = {
-    outgoingNodes.foreach(r => r.removeNode(this))
-  }
-
-  def pointTo(node: GraphNode[T]) = {
-    node.incomingNodes += this
-    outgoingNodes += node
-  }
 }
