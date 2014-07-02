@@ -8,11 +8,22 @@ import org.bdgenomics.scheduling.simulator.events.ResourceDead
 import org.bdgenomics.scheduling.simulator.events.JobFailed
 import scala.Some
 
+/**
+ * This is our simulator class.
+ *
+ * @param dag
+ * @param random
+ * @param params
+ * @param schedulerFactory
+ */
 class World(dag: TaskDAG,
             private val random: RandomGenerator,
             params: Params,
             schedulerFactory: SchedulerFactory) {
+
   val event = new EventManager
+
+  // For cost calculation.
   private val resourcesOutstanding = new mutable.HashSet[Resource]()
 
   private val provisioner = new ProvisionerImpl(this, params)

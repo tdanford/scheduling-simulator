@@ -3,9 +3,10 @@ package org.bdgenomics.scheduling.simulator.events
 import scala.collection.mutable
 import scala.annotation.tailrec
 
-class EventQueue {
-  private val sentEvents: mutable.ListBuffer[(Long, Event)] = mutable.ListBuffer()
-  private val eventSenders: mutable.ListBuffer[(Long, EventSender)] = mutable.ListBuffer()
+class EventQueue(private val sentEvents : mutable.Buffer[(Long,Event)] = new mutable.ListBuffer(),
+                  private val eventSenders : mutable.Buffer[(Long,EventSender)] = new mutable.ListBuffer()) {
+
+  def copy() : EventQueue = new EventQueue(sentEvents.toBuffer, eventSenders.toBuffer)
 
   @tailrec final def dequeue: Option[(Long, Event)] = {
     if (eventSenders.isEmpty) None
