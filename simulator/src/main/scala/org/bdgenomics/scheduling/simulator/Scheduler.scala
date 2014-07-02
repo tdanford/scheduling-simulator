@@ -1,10 +1,8 @@
 package org.bdgenomics.scheduling.simulator
 
+import org.bdgenomics.scheduling.simulator.events.Event
+
 trait Scheduler {
   def start()
-
-  def jobFailed(job: Job)
-  def jobFinished(job: Job)
-  def resourceAvailable(resource: Resource)
-  def resourceDead(resource: Resource)
+  def processEvent( e : Event )
 }

@@ -47,12 +47,17 @@ class World(dag: TaskDAG,
           resourcesOutstanding.foreach(c => stepCost += c.component.cost * stepTime)
           totalCost += stepCost
         }
-        e.execute(scheduler)
+        scheduler.processEvent(e)
         processStep()
       case None =>
     }
   }
 
+  /**
+   * This is called by the provisioner
+   * @param component
+   * @return
+   */
   def createResource(component: Component): Resource = {
     val timeToDie = (resourceDistribution.sample() * component.reliability).toLong
     val resource = new ResourceImpl(this, component)
@@ -63,10 +68,20 @@ class World(dag: TaskDAG,
     resource
   }
 
+  /**
+   * This is called by the resource
+   * @param resource
+   */
   def resourceShutdown(resource: Resource): Unit = {
     resourcesOutstanding.remove(resource)
   }
 
+  /**
+   * This is called by the resource
+   * @param resource
+   * @param task
+   * @return
+   */
   def createJob(resource: Resource, task: Task): Job = {
     val job = new JobImpl(task, resource, this)
     event

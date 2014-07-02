@@ -1,5 +1,7 @@
 package org.bdgenomics.scheduling.simulator
 
+import org.bdgenomics.scheduling.simulator.events._
+
 import scala.collection.mutable
 
 class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) extends Scheduler {
@@ -17,7 +19,17 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
     }
   }
 
-  override def resourceAvailable(resource: Resource): Unit = {
+  def processEvent( e : Event ) {
+    e match {
+      case JobFailed(job) => jobFailed(job)
+      case JobFinished(job) => jobFinished(job)
+      case ResourceAvailable(rec) => resourceAvailable(rec)
+      case ResourceDead(rec) => resourceDead(rec)
+      case ResourceShutdown(rec) =>
+    }
+  }
+
+  def resourceAvailable(resource: Resource): Unit = {
     println("running resource available")
     dag.getLiveTasks.headOption match {
       case Some(task) =>
@@ -30,7 +42,7 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
     }
   }
 
-  override def resourceDead(resource: Resource): Unit = {
+  def resourceDead(resource: Resource): Unit = {
     scheduledTo.remove(resource) match {
       case Some(task) =>
         scheduled -= task
@@ -41,11 +53,11 @@ class SimpleScheduler(provisioner: Provisioner, params: Params, dag: TaskDAG) ex
     }
   }
 
-  override def jobFailed(job: Job): Unit = {
+  def jobFailed(job: Job): Unit = {
     provisioner.killResource(job.resource)
   }
 
-  override def jobFinished(job: Job): Unit = {
+  def jobFinished(job: Job): Unit = {
     dag.setTaskFinished(job.task)
     scheduledTo.remove(job.resource)
     scheduled -= job.task

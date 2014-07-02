@@ -10,7 +10,7 @@ case class TaskDAG(graph: Graph[Task]) {
   }
 
   def setTaskScheduled(value: Task, isScheduled: Boolean) = if (isScheduled) {
-    graph.roots.filter(_.value == value).headOption match {
+    graph.roots.find(_.value == value) match {
       case None => throw new IllegalArgumentException("Task is not a root task.")
       case Some(n) => graph.remove(n)
     }
