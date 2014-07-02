@@ -28,7 +28,7 @@ class SimpleWorldSuite extends FunSuite with BeforeAndAfter {
     val taskGraph = new Graph[Task]()
     taskGraph.insert(new Task(10, 0.0))
     val dag = new TaskDAG(taskGraph)
-    val world = new World(dag, new ISAACRandom(100L), params, simpleSchedulerFactory)
+    val world = new World(dag, new RGSampler(Some(100L)), params, simpleSchedulerFactory)
     assert(world.totalCost === 20.0)
     assert(world.totalTime === 20L)
   }
@@ -37,7 +37,7 @@ class SimpleWorldSuite extends FunSuite with BeforeAndAfter {
     val taskGraph = new Graph[Task]()
     taskGraph.insert(new Task(1500, 0.0))
     val dag = new TaskDAG(taskGraph)
-    val world = new World(dag, new ISAACRandom(100L), params, simpleSchedulerFactory)
+    val world = new World(dag, new RGSampler(Some(100L)), params, simpleSchedulerFactory)
     assert(world.totalCost === 26771.0)
     assert(world.totalTime === 8410L)
   }
@@ -47,7 +47,7 @@ class SimpleWorldSuite extends FunSuite with BeforeAndAfter {
     taskGraph.insert(new Task(100, 0.0))
     taskGraph.insert(new Task(250, 0.0))
     val dag = new TaskDAG(taskGraph)
-    val world = new World(dag, new ISAACRandom(100L), params, simpleSchedulerFactory)
+    val world = new World(dag, new RGSampler(Some(100L)), params, simpleSchedulerFactory)
     assert(world.totalCost === 653.0)
     assert(world.totalTime === 391L)
   }

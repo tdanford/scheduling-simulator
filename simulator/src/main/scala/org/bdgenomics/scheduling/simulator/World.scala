@@ -17,7 +17,7 @@ import scala.Some
  * @param schedulerFactory
  */
 class World(dag: TaskDAG,
-            private val random: RandomGenerator,
+            private val random: Sampler,
             params: Params,
             schedulerFactory: SchedulerFactory) {
 
@@ -28,9 +28,9 @@ class World(dag: TaskDAG,
 
   private val provisioner = new ProvisionerImpl(this, params)
   private val scheduler = schedulerFactory.factory(provisioner, params, dag)
-  private val taskDistribution = params.taskDistribution(random)
-  private val taskFailureDistribution = params.taskFailureDistribution(random)
-  private val resourceDistribution = params.resourceDistribution(random)
+  private val taskDistribution = params.taskDistribution(random.randomGenerator())
+  private val taskFailureDistribution = params.taskFailureDistribution(random.randomGenerator())
+  private val resourceDistribution = params.resourceDistribution(random.randomGenerator())
   var totalCost = 0.0
   def totalTime = event.now
 
