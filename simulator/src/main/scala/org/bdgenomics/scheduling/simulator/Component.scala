@@ -15,5 +15,12 @@
  */
 package org.bdgenomics.scheduling.simulator
 
+/**
+ *
+ * @param name
+ * @param cost
+ * @param reliability
+ * @param timeToStart
+ */
 case class Component(name : String, cost : Double, reliability : Double, timeToStart : Long) {
 }
