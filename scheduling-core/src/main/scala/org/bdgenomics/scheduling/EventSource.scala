@@ -41,7 +41,8 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
 case class Parameters(rng : RandomNumberGenerator) {
   def sampleResourceFailureTime() : Long = rng.nextLong() % 10000
   def sampleJobFailure() : Boolean = rng.nextDouble() <= 0.1
-  def sampleJobCompleteTime( size : Int ) : Int = max(1, rng.nextInt(7) + (size - 3))
+  def sampleJobCompleteTime( size : Int ) : Int = max(1, round(rng.nextGaussian() * (size/10)).toInt)
+  def sampleResourceStartupTime() : Int = round(rng.nextGaussian() * 10).toInt
 
   def copy() : Parameters = Parameters(rng.copy())
 }

@@ -25,5 +25,11 @@ case class Resource(id : String, component : Component, startTime : Long )
     Some(FailureEvent(history.currentTime + params.sampleResourceFailureTime(), this))
 }
 
+case class StartupEvent(time : Long, source : Resource) extends InitialEvent[Resource](time, source) {
+}
+
 case class FailureEvent(time : Long, source : Resource) extends TerminalEvent[Resource](time, source) {
+}
+
+case class ShutdownEvent(time : Long, source : Resource) extends TerminalEvent[Resource](time, source) {
 }
