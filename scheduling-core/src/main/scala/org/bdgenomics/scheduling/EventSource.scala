@@ -16,7 +16,7 @@
 package org.bdgenomics.scheduling
 
 import scala.annotation.tailrec
-import scala.math.max
+import scala.math._
 
 /**
  * "This was my life at time t_1, this was my life at time t_2..."
@@ -47,6 +47,7 @@ case class Parameters(rng : RandomNumberGenerator) {
 }
 
 trait RandomNumberGenerator {
+  def nextGaussian() : Double
   def nextDouble() : Double
   def nextInt(n : Int) : Int
   def nextLong() : Long
@@ -61,6 +62,11 @@ class JavaRNG(seed : Option[Long] = None) extends RandomNumberGenerator {
   private def updateState() {
     random.setSeed(_state)
     _state = random.nextLong()
+  }
+
+  def nextGaussian() : Double = {
+    updateState()
+    random.nextGaussian()
   }
 
   def nextDouble() : Double = {
