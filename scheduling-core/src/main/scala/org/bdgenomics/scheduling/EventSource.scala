@@ -28,6 +28,14 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
   def this() = this(StartEvent, None)
   def currentTime : Long = head.time
   def addToHistory( event : Event ) : EventHistory = new EventHistory(event, Some(this))
+
+  @tailrec private def accumulateEvents(acc : Seq[Event]) : Seq[Event] =
+    head match {
+      case StartEvent => acc.reverse
+      case _ => accumulateEvents(head +: acc)
+    }
+
+  def asSeq() : Seq[Event] = accumulateEvents(Seq())
 }
 
 case class Parameters(rng : RandomNumberGenerator) {
@@ -96,6 +104,11 @@ object StartEvent extends Event {
 abstract class TerminalEvent[T <: EventSource](time : Long, source : T) extends Event {
   override def execute(sim : Simulator) : Option[Simulator] =
     Some(new Simulator(sim.params.copy(), sim.history, sim.sources.filter(s => s != source)))
+}
+
+abstract class InitialEvent[T <: EventSource](time : Long, source : T) extends Event {
+  override def execute(sim : Simulator) : Option[Simulator] =
+    Some(new Simulator(sim.params.copy(), sim.history, source +: sim.sources))
 }
 
 
