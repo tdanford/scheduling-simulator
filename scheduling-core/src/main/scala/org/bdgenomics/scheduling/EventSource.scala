@@ -16,10 +16,12 @@
 package org.bdgenomics.scheduling
 
 import scala.annotation.tailrec
-import scala.math._
 
 /**
  * "This was my life at time t_1, this was my life at time t_2..."
+ *
+ * EventHistory is a linked list of Events in reverse-chronological order (most recent event is
+ * first).
  *
  * @param head The most recent event
  * @param tail The rest of the history before this event
@@ -29,63 +31,35 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
   def currentTime : Long = head.time
   def addToHistory( event : Event ) : EventHistory = new EventHistory(event, Some(this))
 
-  @tailrec private def accumulateEvents(acc : Seq[Event]) : Seq[Event] =
+  @tailrec private def accumulateEvents(acc : Seq[Event], p : Option[Event=>Boolean] = None) : Seq[Event] =
     head match {
       case StartEvent => acc.reverse
-      case _ => accumulateEvents(head +: acc)
+      case _ => accumulateEvents( if(p.map(pred=>pred(head)).getOrElse(true)) head +: acc else acc )
     }
 
+  @tailrec private def flatMapEvents[T](acc : Seq[T], p : Event=>Option[T]) : Seq[T] = {
+    head match {
+      case StartEvent => acc.reverse
+      case _ => flatMapEvents( p(head).map[Seq[T]]( mapped => mapped +: acc ).getOrElse( acc ), p )
+    }
+  }
+
+  @tailrec private def tailFold[T](accFold : T=>T, initial : T, folder : Event=>(T=>T)) : T =
+    head match {
+      case StartEvent => accFold(initial)
+      case _ => tailFold( folder(head).compose(accFold), initial, folder )
+    }
+
+  def foldStateful(initial : Stateful) : Stateful =
+    fold[Stateful](initial)( (stateful, evt) => stateful.updateState(evt) )
+
+  def fold[T](initial : T)(folder : (T, Event) => T) : T =
+    tailFold[T](t => t, initial, e => t => folder(t, e) )
+
+  def flatMap[T]( p : Event=>Option[T] ) : Seq[T] = flatMapEvents(Seq(), p )
+  def map[T](p : Event=>T) : Seq[T] = flatMapEvents(Seq(), (e : Event) => Some(p(e)))
+  def filter(p : Event=>Boolean) : Seq[Event] = accumulateEvents(Seq(), Some(p))
   def asSeq() : Seq[Event] = accumulateEvents(Seq())
-}
-
-case class Parameters(rng : RandomNumberGenerator) {
-  def sampleResourceFailureTime() : Long = rng.nextLong() % 10000
-  def sampleJobFailure() : Boolean = rng.nextDouble() <= 0.1
-  def sampleJobCompleteTime( size : Int ) : Int = max(1, round(rng.nextGaussian() * (size/10)).toInt)
-  def sampleResourceStartupTime() : Int = round(rng.nextGaussian() * 10).toInt
-
-  def copy() : Parameters = Parameters(rng.copy())
-}
-
-trait RandomNumberGenerator {
-  def nextGaussian() : Double
-  def nextDouble() : Double
-  def nextInt(n : Int) : Int
-  def nextLong() : Long
-  def copy() : RandomNumberGenerator
-}
-
-class JavaRNG(seed : Option[Long] = None) extends RandomNumberGenerator {
-
-  val random = seed.map { s => new java.util.Random(s) } getOrElse { new java.util.Random() }
-  private var _state = random.nextLong()
-
-  private def updateState() {
-    random.setSeed(_state)
-    _state = random.nextLong()
-  }
-
-  def nextGaussian() : Double = {
-    updateState()
-    random.nextGaussian()
-  }
-
-  def nextDouble() : Double = {
-    updateState()
-    random.nextDouble()
-  }
-
-  def nextInt(n : Int) : Int = {
-    updateState()
-    random.nextInt(n)
-  }
-
-  def nextLong() : Long = {
-    updateState()
-    random.nextLong()
-  }
-
-  def copy() : RandomNumberGenerator = new JavaRNG(Some(_state))
 }
 
 trait EventSource {
@@ -108,14 +82,17 @@ object StartEvent extends Event {
   val source = null
 }
 
-abstract class TerminalEvent[T <: EventSource](time : Long, source : T) extends Event {
+abstract class IntervalEvent extends Event {}
+
+abstract class TerminalEvent[T <: EventSource](time : Long, val terminated : T) extends IntervalEvent {
   override def execute(sim : Simulator) : Option[Simulator] =
-    Some(new Simulator(sim.params.copy(), sim.history, sim.sources.filter(s => s != source)))
+    Some(sim.update( _.filter(src => src != terminated) ))
 }
 
-abstract class InitialEvent[T <: EventSource](time : Long, source : T) extends Event {
+abstract class InitialEvent[T <: EventSource](time : Long, val started : T) extends IntervalEvent {
   override def execute(sim : Simulator) : Option[Simulator] =
-    Some(new Simulator(sim.params.copy(), sim.history, source +: sim.sources))
+    Some(sim.update(started +: _))
 }
+
 
 

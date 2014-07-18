@@ -17,6 +17,12 @@ package org.bdgenomics.scheduling
 
 import java.util.UUID
 
+/**
+ * This is a little tricky -- the Provider isn't an EventSource in its own right,
+ * it's a component to another EventSource (in this case, the Scheduler).  Therefore,
+ * it provides routines for constructing Events corresponding to the user's decisions,
+ * but it doesn't live as a first-class EventSource on its own.
+ */
 trait Provider {
 
   def createResource( history : EventHistory, params : Parameters, component : Component ) : Event

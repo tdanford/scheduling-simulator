@@ -16,6 +16,7 @@
 package org.bdgenomics.scheduling
 
 import scala.annotation.tailrec
+import scala.math._
 
 /**
  * A Simulator is the (immutable) state of a simulation, including a set of event sources and an
@@ -26,9 +27,12 @@ import scala.annotation.tailrec
  *                most recent event in the history.
  * @param sources The possible sources of future events.
  */
-class Simulator(val params : Parameters, val history : EventHistory, val sources : Seq[EventSource]) {
+class Simulator(val params : Parameters,
+                val history : EventHistory,
+                val sources : Seq[EventSource]) {
 
-  def copy() : Simulator = new Simulator(params.copy(), history, sources)
+  def update( sourceUpdate : Seq[EventSource] => Seq[EventSource] ) : Simulator =
+    new Simulator( params.copy(), history, sourceUpdate(sources))
 
   /**
    * Samples the next state of the simulation from this (the current) one, and returns it -- or None,
@@ -37,7 +41,8 @@ class Simulator(val params : Parameters, val history : EventHistory, val sources
    * @return The next state of the simulation.
    */
   def simulateNextEvent() : Option[Simulator] = {
-    val nextEvents = sources.flatMap {
+
+    val nextEvents : Seq[Event] = sources.flatMap {
       case source => source.sampleNextEvent( history, params )
     }.sortBy(_.time)
 
@@ -46,6 +51,15 @@ class Simulator(val params : Parameters, val history : EventHistory, val sources
       case Seq() => None
     }
   }
+}
+
+case class Parameters(rng : RandomNumberGenerator) {
+  def sampleResourceFailureTime() : Long = rng.nextLong() % 10000
+  def sampleJobFailure() : Boolean = rng.nextDouble() <= 0.1
+  def sampleJobCompleteTime( size : Int ) : Int = max(1, round(rng.nextGaussian() * (size/10)).toInt)
+  def sampleResourceStartupTime() : Int = round(rng.nextGaussian() * 10).toInt
+
+  def copy() : Parameters = Parameters(rng.copy())
 }
 
 /**

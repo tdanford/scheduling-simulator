@@ -28,6 +28,11 @@ case class Job(id : String, task : Task, timeStarted : Long) extends EventSource
   }
 }
 
+case class JobStarted(time : Long, source : Job, resource : Resource) extends InitialEvent[Job](time, source) {}
+
+case class JobKilled(time : Long, source : Job, scheduler : Scheduler) extends TerminalEvent[Job](time, source) {
+}
+
 case class JobFailed(time : Long, source : Job) extends TerminalEvent[Job](time, source) {
 }
 
