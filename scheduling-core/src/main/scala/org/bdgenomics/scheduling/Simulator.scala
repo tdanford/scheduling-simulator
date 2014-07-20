@@ -53,7 +53,7 @@ class Simulator(val params : Parameters,
   }
 }
 
-case class Parameters(rng : RandomNumberGenerator) {
+case class Parameters(rng : RandomNumberGenerator = new JavaRNG()) {
   def sampleResourceFailureTime() : Long = rng.nextLong() % 10000
   def sampleJobFailure() : Boolean = rng.nextDouble() <= 0.1
   def sampleJobCompleteTime( size : Int ) : Int = max(1, round(rng.nextGaussian() * (size/10)).toInt)
