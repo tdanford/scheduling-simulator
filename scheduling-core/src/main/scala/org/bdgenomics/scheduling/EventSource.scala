@@ -31,10 +31,10 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
   def currentTime : Long = head.time
   def addToHistory( event : Event ) : EventHistory = new EventHistory(event, Some(this))
 
-  @tailrec private def accumulateEvents(acc : Seq[Event], p : Option[Event=>Boolean] = None) : Seq[Event] =
+  @tailrec private def accumulateEvents(acc : Seq[Event]) : Seq[Event] =
     head match {
       case StartEvent => acc
-      case _ => tail.get.accumulateEvents( if(p.map(pred=>pred(head)).getOrElse(true)) head +: acc else acc )
+      case _ => tail.get.accumulateEvents( head +: acc )
     }
 
   @tailrec private def flatMapEvents[T](acc : Seq[T], p : Event=>Option[T]) : Seq[T] = {
@@ -50,15 +50,15 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
       case _ => tail.get.tailFold( folder(head).compose(accFold), initial, folder )
     }
 
-  def foldStateful(initial : Stateful) : Stateful =
-    fold[Stateful](initial)( (stateful, evt) => stateful.updateState(evt) )
+  def foldStateful[T <: Stateful](initial : T) : T =
+    fold[Stateful](initial)( (stateful, evt) => stateful.updateState(evt) ).asInstanceOf[T]
 
   def fold[T](initial : T)(folder : (T, Event) => T) : T =
     tailFold[T](t => t, initial, e => t => folder(t, e) )
 
   def flatMap[T]( p : Event=>Option[T] ) : Seq[T] = flatMapEvents(Seq(), p )
   def map[T](p : Event=>T) : Seq[T] = flatMapEvents(Seq(), (e : Event) => Some(p(e)))
-  def filter(p : Event=>Boolean) : Seq[Event] = accumulateEvents(Seq(), Some(p))
+  def filter(p : Event=>Boolean) : Seq[Event] = flatMapEvents(Seq(), e => if(p(e)) Some(e) else None )
   def asSeq() : Seq[Event] = accumulateEvents(Seq())
 }
 

@@ -35,4 +35,49 @@ class EventHistorySuite extends FunSuite {
     assert( history.asSeq() === Seq(e1, e2, e3) )
   }
 
+  test("flatMap maps and drops mapped values in the correct order") {
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
+    val history = new EventHistory().addToHistory(
+      e1).addToHistory(
+        e2).addToHistory(
+        e3)
+
+    def map(e : Event) : Option[Long] = e match {
+      case TestEvent(2, TestEventSource) => None
+      case e : Event => Some(e.time)
+    }
+
+    assert( history.flatMap(map) === Seq(1L, 3L) )
+  }
+
+  test("foldStateful correctly folds a Stateful value through the Events") {
+    class Adder(val sum : Long) extends Stateful {
+      override def updateState(e: Event): Stateful = new Adder(sum + e.time)
+    }
+
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
+    val history = new EventHistory().addToHistory(
+      e1).addToHistory(
+        e2).addToHistory(
+        e3)
+
+    val finalAdder : Adder = history.foldStateful(new Adder(0L))
+
+    assert(finalAdder.sum === 6)
+  }
+
+  test("filter returns only those Events passing a predicate") {
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
+    val history = new EventHistory().addToHistory(
+      e1).addToHistory(
+        e2).addToHistory(
+        e3)
+
+    def predicate(e : Event) : Boolean = e match {
+      case TestEvent(2, TestEventSource) => false
+      case _ => true
+    }
+
+    assert( history.filter(predicate) === Seq(e1, e3) )
+  }
 }
