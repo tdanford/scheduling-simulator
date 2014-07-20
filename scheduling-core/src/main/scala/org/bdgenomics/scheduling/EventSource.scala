@@ -33,21 +33,21 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
 
   @tailrec private def accumulateEvents(acc : Seq[Event], p : Option[Event=>Boolean] = None) : Seq[Event] =
     head match {
-      case StartEvent => acc.reverse
-      case _ => accumulateEvents( if(p.map(pred=>pred(head)).getOrElse(true)) head +: acc else acc )
+      case StartEvent => acc
+      case _ => tail.get.accumulateEvents( if(p.map(pred=>pred(head)).getOrElse(true)) head +: acc else acc )
     }
 
   @tailrec private def flatMapEvents[T](acc : Seq[T], p : Event=>Option[T]) : Seq[T] = {
     head match {
-      case StartEvent => acc.reverse
-      case _ => flatMapEvents( p(head).map[Seq[T]]( mapped => mapped +: acc ).getOrElse( acc ), p )
+      case StartEvent => acc
+      case _ => tail.get.flatMapEvents( p(head).map[Seq[T]]( mapped => mapped +: acc ).getOrElse( acc ), p )
     }
   }
 
   @tailrec private def tailFold[T](accFold : T=>T, initial : T, folder : Event=>(T=>T)) : T =
     head match {
       case StartEvent => accFold(initial)
-      case _ => tailFold( folder(head).compose(accFold), initial, folder )
+      case _ => tail.get.tailFold( folder(head).compose(accFold), initial, folder )
     }
 
   def foldStateful(initial : Stateful) : Stateful =
