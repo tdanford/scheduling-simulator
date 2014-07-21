@@ -24,6 +24,11 @@ trait Stateful {
 abstract class Scheduler extends EventSource with Stateful {
 }
 
+object Tracker {
+  def apply[T <: EventSource](history : EventHistory) : Tracker[T] =
+    history.foldStateful(new Tracker[T](Map()))
+}
+
 class Tracker[T <: EventSource](val events : Map[T, (InitialEvent[T], Option[TerminalEvent[T]])]) extends Stateful {
   override def updateState(e: Event): Tracker[T] = {
     e match {
