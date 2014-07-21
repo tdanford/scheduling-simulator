@@ -20,6 +20,7 @@ trait RandomNumberGenerator {
   def nextDouble() : Double
   def nextInt(n : Int) : Int
   def nextLong() : Long
+  def getSeed : Long
   def copy() : RandomNumberGenerator
 }
 
@@ -27,6 +28,8 @@ class JavaRNG(seed : Option[Long] = None) extends RandomNumberGenerator {
 
   val random = seed.map { s => new java.util.Random(s) } getOrElse { new java.util.Random() }
   private var _state = random.nextLong()
+
+  def getSeed : Long = _state
 
   private def updateState() {
     random.setSeed(_state)
