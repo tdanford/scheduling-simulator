@@ -54,7 +54,7 @@ class Simulator(val params : Parameters,
 }
 
 case class Parameters(rng : RandomNumberGenerator = new JavaRNG()) {
-  def sampleResourceFailureTime() : Long = rng.nextLong() % 10000
+  def sampleResourceFailureTime() : Long = abs(rng.nextLong()) % 10000
   def sampleJobFailure() : Boolean = rng.nextDouble() <= 0.1
   def sampleJobCompleteTime( size : Int ) : Int = max(1, round(rng.nextGaussian() * (size/10)).toInt)
   def sampleResourceStartupTime() : Int = round(rng.nextGaussian() * 10).toInt
@@ -69,14 +69,15 @@ case class Parameters(rng : RandomNumberGenerator = new JavaRNG()) {
  */
 class Timeline(val startingPoint : Simulator) {
 
-  @tailrec private def iterate( acc : Seq[Simulator], current : Simulator ) : Seq[Simulator] = {
+  @tailrec private def iterate( acc : Seq[Simulator], current : Simulator )
+  : (Simulator, Seq[Simulator]) = {
     current.simulateNextEvent() match {
       case Some(nextSim) => iterate(current +: acc, nextSim)
-      case None => acc
+      case None => (current, acc)
     }
   }
 
-  val simulators = iterate(Seq(), startingPoint)
+  val (currentSimulator, history) = iterate(Seq(), startingPoint)
 }
 
 trait TimelineValuation {

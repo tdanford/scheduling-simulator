@@ -19,12 +19,12 @@ import org.scalatest.FunSuite
 
 class TrackerSuite extends FunSuite {
 
-  test("an InitalEvent and TerminalEvent cause a single entry to be created in the Tracker") {
-    object TestEventSource extends EventSource {
-      override def sampleNextEvent(history: EventHistory,
-                                   params: Parameters): Option[Event] = None
-    }
+  object TestEventSource extends EventSource {
+    override def sampleNextEvent(history: EventHistory,
+                                 params: Parameters): Option[Event] = None
+  }
 
+  test("an InitalEvent and TerminalEvent cause a single entry to be created in the Tracker") {
     object TestStart extends InitialEvent[EventSource](10, TestEventSource) {
       override def time: Long = 10
       override def source: EventSource = TestEventSource
@@ -43,6 +43,47 @@ class TrackerSuite extends FunSuite {
     assert( updatedTracker.events.contains(TestEventSource) )
     assert( updatedTracker.events.size === 1 )
     assert( !updatedTracker.isOpen(TestEventSource) )
+  }
 
+  test("an InitialEvent causes a single, open entry to be created in the Tracker") {
+    object TestStart extends InitialEvent[EventSource](10, TestEventSource) {
+      override def time: Long = 10
+      override def source: EventSource = TestEventSource
+    }
+
+    object TestEvent extends Event {
+      override def time : Long = 20
+      override def source : EventSource = TestEventSource
+    }
+
+    val eh = EventHistory(Seq(TestStart, TestEvent))
+    assert( eh.asSeq() === Seq(TestStart, TestEvent) )
+
+    val tracker = new Tracker[EventSource](Map())
+    val updatedTracker = eh.foldStateful[Tracker[EventSource]](tracker)
+
+    assert( updatedTracker.events.contains(TestEventSource) )
+    assert( updatedTracker.events.size === 1 )
+    assert( updatedTracker.isOpen(TestEventSource) )
+  }
+
+  test("a TerminalEvent without an InitialEvent throws an IllegalStateException") {
+    object TestEnd extends TerminalEvent[EventSource](10, TestEventSource) {
+      override def time: Long = 10
+      override def source: EventSource = TestEventSource
+    }
+
+    object TestEvent extends Event {
+      override def time : Long = 20
+      override def source : EventSource = TestEventSource
+    }
+
+    val eh = EventHistory(Seq(TestEnd, TestEvent))
+    assert( eh.asSeq() === Seq(TestEnd, TestEvent) )
+
+    val tracker = new Tracker[EventSource](Map())
+    intercept[IllegalStateException] {
+      eh.foldStateful[Tracker[EventSource]](tracker)
+    }
   }
 }

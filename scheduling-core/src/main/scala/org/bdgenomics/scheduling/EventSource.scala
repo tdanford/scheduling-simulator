@@ -23,6 +23,7 @@ object EventHistory {
       case Seq() => appender(new EventHistory())
       case first :: rest => construct( eh => appender(eh).addToHistory(first), rest )
     }
+
   def apply(events : Seq[Event]) : EventHistory = construct(eh => eh, events)
 }
 
