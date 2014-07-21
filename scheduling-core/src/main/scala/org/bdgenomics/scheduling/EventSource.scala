@@ -17,6 +17,15 @@ package org.bdgenomics.scheduling
 
 import scala.annotation.tailrec
 
+object EventHistory {
+  @tailrec private def construct( appender : EventHistory => EventHistory, events : Seq[Event] ) : EventHistory =
+    events match {
+      case Seq() => appender(new EventHistory())
+      case first :: rest => construct( eh => appender(eh).addToHistory(first), rest )
+    }
+  def apply(events : Seq[Event]) : EventHistory = construct(eh => eh, events)
+}
+
 /**
  * "This was my life at time t_1, this was my life at time t_2..."
  *
@@ -28,8 +37,14 @@ import scala.annotation.tailrec
  */
 class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
   def this() = this(StartEvent, None)
+
   def currentTime : Long = head.time
-  def addToHistory( event : Event ) : EventHistory = new EventHistory(event, Some(this))
+  def addToHistory( event : Event ) : EventHistory = {
+    if(event.time < head.time) {
+      throw new IllegalArgumentException("Event %s has time %d < current time %d".format(event, event.time, currentTime))
+    }
+    new EventHistory(event, Some(this))
+  }
 
   @tailrec private def accumulateEvents(acc : Seq[Event]) : Seq[Event] =
     head match {
@@ -47,7 +62,7 @@ class EventHistory( val head : Event, val tail : Option[EventHistory] ) {
   @tailrec private def tailFold[T](accFold : T=>T, initial : T, folder : Event=>(T=>T)) : T =
     head match {
       case StartEvent => accFold(initial)
-      case _ => tail.get.tailFold( folder(head).compose(accFold), initial, folder )
+      case _ => tail.get.tailFold( folder(head).andThen(accFold), initial, folder )
     }
 
   def foldStateful[T <: Stateful](initial : T) : T =

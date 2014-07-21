@@ -24,6 +24,30 @@ case class TestEvent(time : Long, source : EventSource = TestEventSource) extend
 
 class EventHistorySuite extends FunSuite {
 
+  test("constructing an EventHistory directly from a Seq[Event] using " +
+    "EventHistory.apply produces events in the right order") {
+
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
+
+    val history = EventHistory(Seq(e1, e2, e3))
+
+    assert(history.asSeq() === Seq(e1, e2, e3))
+  }
+
+  test("using the default constructor creates an EventHistory with a StartEvent") {
+    val history = new EventHistory()
+    assert( history.head === StartEvent )
+  }
+
+  test("adding events in non-chronological order triggers an IllegalArgumentException") {
+
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(3), TestEvent(2))
+
+    intercept[IllegalArgumentException] {
+      EventHistory(Seq(e1, e2, e3))
+    }
+  }
+
   test("asSeq returns Events in the order in which they're added") {
 
     val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
@@ -64,6 +88,25 @@ class EventHistorySuite extends FunSuite {
     val finalAdder : Adder = history.foldStateful(new Adder(0L))
 
     assert(finalAdder.sum === 6)
+  }
+
+  test("foldStateful applies the events in correct temporal order") {
+    class Adder(val sum : Long, val lastTime : Long = 0L) extends Stateful {
+      override def updateState(e: Event): Stateful = {
+        if(e.time < lastTime) {
+          throw new IllegalStateException("out of order events")
+        }
+        new Adder(sum + e.time, e.time)
+      }
+    }
+
+    val (e1, e2, e3) = (TestEvent(1), TestEvent(2), TestEvent(3))
+    val history = EventHistory(Seq(e1, e2, e3))
+
+    val adder = history.foldStateful[Adder](new Adder(0L))
+
+    assert(adder.sum === 6)
+    assert(adder.lastTime === 3)
   }
 
   test("filter returns only those Events passing a predicate") {
