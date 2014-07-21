@@ -18,6 +18,11 @@ package org.bdgenomics.scheduling
 import scala.annotation.tailrec
 import scala.math._
 
+object Simulator {
+  def apply(sources : EventSource*) : Simulator =
+    new Simulator(new Parameters(), EventHistory(Seq()), sources.toSeq)
+}
+
 /**
  * A Simulator is the (immutable) state of a simulation, including a set of event sources and an
  * event history (which includes the current time).
@@ -46,9 +51,9 @@ class Simulator(val params : Parameters,
       case source => source.sampleNextEvent( history, params )
     }.sortBy(_.time)
 
-    nextEvents match {
-      case first :: rest => first.execute(new Simulator(params, history.addToHistory(first), sources))
-      case Seq() => None
+    nextEvents.headOption.flatMap[Simulator] {
+      first : Event =>
+        first.execute(new Simulator(params, history.addToHistory(first), sources))
     }
   }
 }
