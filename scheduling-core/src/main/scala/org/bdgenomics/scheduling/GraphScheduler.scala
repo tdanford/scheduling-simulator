@@ -15,6 +15,11 @@
  */
 package org.bdgenomics.scheduling
 
-class GraphScheduler {
+case class TEdge(from : Task, to: Task) extends Edge[Task] {}
 
+trait TaskGraph extends DirectedGraph[Task,TEdge] {}
+
+class GraphScheduler(val provider : Provider,
+                     val component : Component,
+                     val tasks : TaskGraph) {
 }
