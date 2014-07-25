@@ -15,7 +15,9 @@
  */
 package org.bdgenomics.scheduling
 
-class RDDGraph {
+class RDDGraph(resultRDDs : Seq[RDD]) {
+
+
 
 }
 
@@ -32,3 +34,14 @@ trait Partitioning {
 }
 
 case class RDD(id : String, partition : Partitioning, deps : Seq[Dependency]) {}
+
+/**
+ *
+ * @param rdds a sequence of consecutive RDDs, each depending (in a narrow dependency)
+ *             on the RDD before it.
+ * @param part the (consistent) index of the partition (in all the RDDs) of the data
+ *             for this task.
+ */
+case class RDDTask(rdds : Seq[RDD], part : Int) {
+
+}
