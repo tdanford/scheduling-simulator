@@ -128,7 +128,6 @@ object GraphAlgorithms {
     new TopoSort(graph).visitNodes(collector)
     collector.list
   }
-
 }
 
 object Graph {

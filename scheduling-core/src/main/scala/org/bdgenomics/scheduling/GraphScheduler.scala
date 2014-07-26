@@ -19,7 +19,39 @@ case class TEdge(from : Task, to: Task) extends Edge[Task] {}
 
 trait TaskGraph extends DirectedGraph[Task,TEdge] {}
 
+trait StatefulScheduler extends Scheduler with Stateful {
+
+  def blankScheduler : StatefulScheduler
+  def updateState(e : Event) : StatefulScheduler
+  def findNextEvent(history : EventHistory, params : Parameters) : Option[Event]
+
+  override def sampleNextEvent(history: EventHistory, params: Parameters): Option[Event] = {
+
+    def updater(sim : StatefulScheduler, evt : Event) : StatefulScheduler =
+      sim.updateState(evt)
+
+    val updated : StatefulScheduler =
+      history.fold[StatefulScheduler](blankScheduler)(updater)
+
+    updated.findNextEvent(history, params)
+  }
+}
+
 class GraphScheduler(val provider : Provider,
                      val component : Component,
-                     val tasks : TaskGraph) {
+                     val tasks : TaskGraph,
+                     val resourceTracker : Tracker[Resource],
+                     val jobTracker : Tracker[Job]) extends StatefulScheduler {
+
+  override def blankScheduler: StatefulScheduler =
+    new GraphScheduler(provider, component, tasks, Tracker[Resource](), Tracker[Job]())
+
+  override def updateState(e: Event): StatefulScheduler = e match {
+    case _ => this
+  }
+
+  override def findNextEvent(history: EventHistory, params: Parameters): Option[Event] = {
+
+    None
+  }
 }

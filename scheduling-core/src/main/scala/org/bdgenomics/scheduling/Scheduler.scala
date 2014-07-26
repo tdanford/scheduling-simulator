@@ -25,6 +25,7 @@ abstract class Scheduler extends EventSource {
 }
 
 object Tracker {
+  def apply[T <: EventSource]() : Tracker[T] = new Tracker[T](Map())
   def apply[T <: EventSource](history : EventHistory) : Tracker[T] =
     history.foldStateful(new Tracker[T](Map()))
 }
