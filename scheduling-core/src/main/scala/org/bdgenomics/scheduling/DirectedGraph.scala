@@ -15,15 +15,21 @@
  */
 package org.bdgenomics.scheduling
 
+import GraphAlgorithms._
+
+import scala.annotation.tailrec
+
 trait Edge[Node] {
   def from : Node
   def to : Node
 }
 
 case class DEDGE( from : NODE, to : NODE ) extends Edge[NODE] {}
-case class NODE( name : String ) {}
+case class NODE( name : Int ) {}
 
 trait DirectedGraph[NodeType,EdgeType <: Edge[NodeType]] {
+
+  def nodes : Seq[NodeType]
 
   def addNodes(nodes : Seq[NodeType]) : DirectedGraph[NodeType,EdgeType]
   def addEdges(edges : Seq[EdgeType]) : DirectedGraph[NodeType,EdgeType]
@@ -34,6 +40,66 @@ trait DirectedGraph[NodeType,EdgeType <: Edge[NodeType]] {
     outEdges(nFrom).find( _.to == nTo ).nonEmpty
 }
 
+trait Visitor[T] {
+  def visit( t : T ) : Boolean
+}
+
+class Collector[T] extends Visitor[T] {
+
+  private var values : Seq[T] = Seq()
+
+  def list : Seq[T] = values
+
+  def visit( t : T ) : Boolean = {
+    values = values :+ t
+    true
+  }
+}
+
+class BFS[N, E<:Edge[N]]( graph : DirectedGraph[N, E] ) {
+
+  def visitNodes( visitor : Visitor[N], startSet : Seq[N] )  = {
+    @tailrec def visitNext( visited : Set[N], current : Seq[N] ) {
+      val continue : Boolean = current.forall( visitor.visit )
+      if(continue) {
+        val nextVisited = visited ++ current
+        val next = current.flatMap(
+          n => graph.outEdges(n).map(e => e.to).filter( n => !nextVisited.contains(n)) )
+        if(next.nonEmpty) {
+          visitNext( nextVisited, next )
+        }
+      }
+    }
+
+    visitNext( Set(), startSet )
+  }
+
+}
+
+object GraphAlgorithms {
+
+  def inDegree[N, E<: Edge[N]](g : DirectedGraph[N, E], n : N) : Int =
+    g.nodes.count( f => g.areNeighbors(f, n) )
+
+  def outDegree[N, E <: Edge[N]]( g : DirectedGraph[N, E], n : N) : Int =
+    g.outEdges(n).size
+
+  def nodesWithInDegree[N, E<:Edge[N]](g : DirectedGraph[N, E], degree : Int) : Seq[N] =
+    g.nodes.filter( n => inDegree(g, n) == degree )
+
+  def outEdges[N, E<:Edge[N]](g : DirectedGraph[N, E], nodes : Seq[N]) : Seq[N] =
+    nodes.flatMap(g.outEdges).map(_.to).distinct
+
+  def topologicalSort[N, E <: Edge[N]](graph: DirectedGraph[N, E]): Seq[N] = {
+    val collector = new Collector[N]()
+    val startSet = nodesWithInDegree(graph, 0)
+    if(startSet.isEmpty) throw new IllegalStateException("No starting set found")
+    new BFS(graph).visitNodes(collector, startSet)
+    collector.list
+  }
+
+}
+
 object Graph {
 
   def apply[NodeType, EdgeType <: Edge[NodeType]](edges : EdgeType*) : DirectedGraph[NodeType, EdgeType] =
@@ -42,6 +108,8 @@ object Graph {
 
 case class MemoryDirectedGraph[NodeType, EdgeType <: Edge[NodeType]](adjacencies : Map[NodeType, Seq[EdgeType]])
   extends DirectedGraph[NodeType, EdgeType] {
+
+  override def nodes : Seq[NodeType] = adjacencies.keys.toSeq
 
   override def addNodes(nodes: Seq[NodeType]): DirectedGraph[NodeType, EdgeType] =
     MemoryDirectedGraph(adjacencies ++

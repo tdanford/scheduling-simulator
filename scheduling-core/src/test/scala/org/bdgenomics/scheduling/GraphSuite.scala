@@ -19,17 +19,28 @@ import org.scalatest.FunSuite
 
 class GraphSuite extends FunSuite {
 
+  def graph( edges : (Int,Int)* ) : DirectedGraph[NODE, DEDGE] =
+    Graph[NODE, DEDGE]( edges.map( p => DEDGE(NODE(p._1), NODE(p._2)) ) : _*)
+
   test("areNeighbors returns correct values for a 3-node graph") {
-    val g : DirectedGraph[NODE, DEDGE]= Graph(
-      DEDGE(NODE("1"), NODE("2")),
-      DEDGE(NODE("1"), NODE("3")))
+    val g = graph(1 -> 2, 1 -> 3)
 
-    assert(g.areNeighbors(NODE("1"), NODE("2")))
-    assert(g.areNeighbors(NODE("1"), NODE("3")))
-    assert(!g.areNeighbors(NODE("2"), NODE("3")))
+    assert(g.areNeighbors(NODE(1), NODE(2)))
+    assert(g.areNeighbors(NODE(1), NODE(3)))
+    assert(!g.areNeighbors(NODE(2), NODE(3)))
 
-    assert(!g.areNeighbors(NODE("2"), NODE("1")))
-    assert(!g.areNeighbors(NODE("3"), NODE("1")))
-    assert(!g.areNeighbors(NODE("3"), NODE("2")))
+    assert(!g.areNeighbors(NODE(2), NODE(1)))
+    assert(!g.areNeighbors(NODE(3), NODE(1)))
+    assert(!g.areNeighbors(NODE(3), NODE(2)))
+  }
+
+  test("nodesWithInDegree returns 0-degree nodes correctly") {
+    val g = graph( 1 -> 2, 1 -> 3, 2 -> 3, 3 -> 4 )
+    assert(GraphAlgorithms.nodesWithInDegree(g, 0) === Seq(NODE(1)))
+  }
+
+  test("topologicalSort returns nodes in correct order") {
+    val g = graph( 1 -> 3, 1 -> 2, 3 -> 2, 2 -> 4 )
+    assert( GraphAlgorithms.topologicalSort(g).map(_.name) === Seq(1, 3, 2, 4))
   }
 }
