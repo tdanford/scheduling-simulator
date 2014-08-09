@@ -19,6 +19,11 @@ case class TEdge(from : Task, to: Task) extends Edge[Task] {}
 
 trait TaskGraph extends DirectedGraph[Task,TEdge] {}
 
+/**
+ * A 'stateful scheduler' is a Scheduler with state which needs to be updated/created
+ * from the event stream, before it can be run (i.e. before sampleNextEvent can be
+ * invoked).
+ */
 trait StatefulScheduler extends Scheduler with Stateful {
 
   def blankScheduler : StatefulScheduler
@@ -37,6 +42,17 @@ trait StatefulScheduler extends Scheduler with Stateful {
   }
 }
 
+/**
+ * GraphScheduler takes a task graph, showing the dependencies between individual
+ * tasks, and executes them in a topologically-ordered way using a single component
+ * from a single provider.
+ *
+ * @param provider The provider to use
+ * @param component The componnent to allocate in this provider
+ * @param tasks The task graph, encoding dependencies between tasks
+ * @param resourceTracker The scheduler state indicating the history of each resource available.
+ * @param jobTracker The scheduler state indicating the history of each task and job
+ */
 class GraphScheduler(val provider : Provider,
                      val component : Component,
                      val tasks : TaskGraph,
@@ -47,10 +63,18 @@ class GraphScheduler(val provider : Provider,
     new GraphScheduler(provider, component, tasks, Tracker[Resource](), Tracker[Job]())
 
   override def updateState(e: Event): StatefulScheduler = e match {
-    case _ => this
+
+    case _ =>
+      new GraphScheduler( provider, component, tasks,
+        resourceTracker.updateState(e),
+        jobTracker.updateState(e) )
   }
 
   override def findNextEvent(history: EventHistory, params: Parameters): Option[Event] = {
+
+    val topo : Seq[Task] = GraphAlgorithms.topologicalSort(tasks)
+
+    val unfinished : Seq[Task] = topo.filter
 
     None
   }

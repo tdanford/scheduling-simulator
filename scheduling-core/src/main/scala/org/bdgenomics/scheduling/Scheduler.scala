@@ -65,6 +65,8 @@ class Tracker[T <: EventSource](val events : Map[T, (InitialEvent[T], Option[Ter
     case _ => None
   }
 
+  def findClosed() : Seq[T] = events.filter( p => !isOpenPair(p._2) ).map(_._1).toSeq
+
   def isOpenPair( eventPair : (InitialEvent[T], Option[TerminalEvent[T]]) ) : Boolean =
     eventPair match {
       case (initialEvent, None) => true

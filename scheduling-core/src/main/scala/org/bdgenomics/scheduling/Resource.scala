@@ -15,9 +15,25 @@
  */
 package org.bdgenomics.scheduling
 
+/**
+ * A Component is a Resource-template.  It encodes the cost and characteristics of a Resource
+ * that would be created by a particular Provider, and is used as an argument to the Provider in
+ * order to create a Resource.
+ *
+ * @param name A unique ID for the Component
+ * @param cost The cost-per-unit-time of the Resource while it's running
+ */
 case class Component(name : String, cost : Double) {
 }
 
+/**
+ * A Resource is a running Component, an element on which Jobs can be started and executed.
+ * Resources start, fail (randomly), and are shutdown.
+ *
+ * @param id The unique identifier for this Resource
+ * @param component The component that was used to create this resource
+ * @param startTime The time at which this resource was started
+ */
 case class Resource(id : String, component : Component, startTime : Long )
   extends EventSource {
 
