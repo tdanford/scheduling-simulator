@@ -36,6 +36,9 @@ trait DirectedGraph[NodeType,EdgeType <: Edge[NodeType]] {
 
   def outEdges(node : NodeType) : Iterable[EdgeType]
 
+  def neighbors( nFrom : NodeType ) : Iterable[NodeType] =
+    outEdges(nFrom).map(_.to)
+
   def areNeighbors( nFrom : NodeType, nTo : NodeType ) : Boolean =
     outEdges(nFrom).exists( _.to == nTo )
 }
@@ -60,14 +63,12 @@ class BFS[N, E<:Edge[N]]( graph : DirectedGraph[N, E] ) {
 
   def visitNodes( visitor : Visitor[N], startSet : Seq[N] )  = {
     @tailrec def visitNext( visited : Set[N], current : Seq[N] ) {
-      val continue : Boolean = current.forall( visitor.visit )
+      val continue : Boolean = current.nonEmpty && current.forall( visitor.visit )
       if(continue) {
-        val nextVisited = visited ++ current
+        val nextVisited : Set[N] = visited ++ current
         val next = current.flatMap(
-          n => graph.outEdges(n).map(e => e.to).filter( n => !nextVisited.contains(n)) )
-        if(next.nonEmpty) {
-          visitNext( nextVisited, next )
-        }
+          n => graph.neighbors(n).filter( !nextVisited.contains(_)) )
+        visitNext( nextVisited, next )
       }
     }
 
