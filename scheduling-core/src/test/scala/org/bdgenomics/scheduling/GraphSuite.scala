@@ -15,12 +15,59 @@
  */
 package org.bdgenomics.scheduling
 
+import java.util.Random
+
 import org.scalatest.FunSuite
 
 class GraphSuite extends FunSuite {
 
   def graph( edges : (Int,Int)* ) : DirectedGraph[NODE, DEDGE] =
     Graph[NODE, DEDGE]( edges.map( p => DEDGE(NODE(p._1), NODE(p._2)) ) : _*)
+
+  /**
+   * Generates a random permutation on a set of numbers [0, n)
+   * @param r
+   * @param n
+   * @return
+   */
+  def permutation( r : Random, n : Int ) : Seq[Int] = {
+    val indices = (0 until n).toArray
+
+    def swap(left : Int, right : Int) {
+      val s = indices(left)
+      indices(left) = indices(right)
+      indices(right) = s
+    }
+
+    (0 until n).foreach { i =>
+      swap(r.nextInt(n), r.nextInt(n))
+    }
+    indices
+  }
+
+  /**
+   * Generates a random DAG for the given size parameters.
+   *
+   * @param r
+   * @param nodes
+   * @param edges
+   * @return
+   */
+  def randomDAG( r : Random, nodes : Int, edges : Int ) : DirectedGraph[NODE, DEDGE] = {
+
+    val nodeList = permutation(r, nodes).map(i => NODE(i))
+    println(nodeList)
+
+    def randomEdge(i : Int) : DEDGE = {
+      // the -1/+1 bit is so that we never choose the *first* node in the ordering
+      val end = r.nextInt(nodes-1) + 1
+      val start = r.nextInt(end+1)
+      DEDGE(nodeList(start), nodeList(end))
+    }
+    val edgeList = (0 until edges).map(randomEdge).distinct
+    println(edgeList)
+    Graph[NODE, DEDGE](edgeList : _*)
+  }
 
   test("areNeighbors returns correct values for a 3-node graph") {
     val g = graph(1 -> 2, 1 -> 3)
@@ -42,5 +89,26 @@ class GraphSuite extends FunSuite {
   test("topologicalSort returns nodes in correct order") {
     val g = graph( 1 -> 3, 1 -> 2, 3 -> 2, 2 -> 4 )
     assert( GraphAlgorithms.topologicalSort(g).map(_.name) === Seq(1, 3, 2, 4))
+  }
+
+  test("topologicalSort on a random graph produces the right ordering") {
+    val rseed = new Random()
+    //val seed = rseed.nextLong()
+    val seed = 5220839347594113050L
+    println("Seed %d".format(seed))
+    val r = new Random(seed)
+    val g = randomDAG(r, 20, 50)
+    val ordering : Seq[NODE] = GraphAlgorithms.topologicalSort(g)
+    println("Ordering: %s".format(ordering))
+
+    ordering.zipWithIndex.foreach {
+      case (orderedLater : NODE, j : Int) =>
+        (0 until j).foreach { i =>
+          val orderedEarlier = ordering(i)
+          assert(!g.areNeighbors(orderedLater, orderedEarlier),
+            "edge %s -> %s found, but %s comes before %s in the ordering"
+              .format(orderedLater, orderedEarlier, orderedEarlier, orderedLater))
+        }
+    }
   }
 }

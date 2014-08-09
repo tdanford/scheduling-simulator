@@ -37,7 +37,7 @@ trait DirectedGraph[NodeType,EdgeType <: Edge[NodeType]] {
   def outEdges(node : NodeType) : Iterable[EdgeType]
 
   def areNeighbors( nFrom : NodeType, nTo : NodeType ) : Boolean =
-    outEdges(nFrom).find( _.to == nTo ).nonEmpty
+    outEdges(nFrom).exists( _.to == nTo )
 }
 
 trait Visitor[T] {
