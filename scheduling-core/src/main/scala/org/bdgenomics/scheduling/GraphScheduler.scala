@@ -74,7 +74,7 @@ class GraphScheduler(val provider : Provider,
 
     val topo : Seq[Task] = GraphAlgorithms.topologicalSort(tasks)
 
-    val unfinished : Seq[Task] = topo.filter
+    //val unfinished : Seq[Task] = topo.filter
 
     None
   }
