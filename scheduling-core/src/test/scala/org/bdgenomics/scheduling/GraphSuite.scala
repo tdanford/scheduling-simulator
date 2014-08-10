@@ -22,7 +22,7 @@ import org.scalatest.FunSuite
 class GraphSuite extends FunSuite {
 
   def graph( edges : (Int,Int)* ) : DirectedGraph[NODE, DEDGE] =
-    Graph[NODE, DEDGE]( edges.map( p => DEDGE(NODE(p._1), NODE(p._2)) ) : _*)
+    Graph[NODE, DEDGE]( edges.map( p => DEDGE(NODE(p._1), NODE(p._2)) ) )
 
   /**
    * Generates a random permutation on a set of numbers [0, n)
@@ -55,18 +55,17 @@ class GraphSuite extends FunSuite {
    */
   def randomDAG( r : Random, nodes : Int, edges : Int ) : DirectedGraph[NODE, DEDGE] = {
 
-    val nodeList = permutation(r, nodes).map(i => NODE(i))
-    println(nodeList)
+    val ns = permutation(r, nodes).map(i => NODE(i))
+    val nodeList = (0 until nodes).map( i => NODE(i) )
 
     def randomEdge(i : Int) : DEDGE = {
       // the -1/+1 bit is so that we never choose the *first* node in the ordering
       val end = r.nextInt(nodes-1) + 1
-      val start = r.nextInt(end+1)
+      val start = r.nextInt(end)
       DEDGE(nodeList(start), nodeList(end))
     }
     val edgeList = (0 until edges).map(randomEdge).distinct
-    println(edgeList)
-    Graph[NODE, DEDGE](edgeList : _*)
+    Graph[NODE, DEDGE](nodeList, edgeList)
   }
 
   test("areNeighbors returns correct values for a 3-node graph") {
@@ -81,9 +80,16 @@ class GraphSuite extends FunSuite {
     assert(!g.areNeighbors(NODE(3), NODE(2)))
   }
 
+  test("Graph with only one edge has two nodes") {
+    val g = graph( 1 -> 2 )
+    assert( g.nodes.toSeq.contains( NODE(1) ))
+    assert( g.nodes.toSeq.contains( NODE(2) ))
+
+  }
+
   test("nodesWithInDegree returns 0-degree nodes correctly") {
     val g = graph( 1 -> 2, 1 -> 3, 2 -> 3, 3 -> 4 )
-    assert(GraphAlgorithms.nodesWithInDegree(g, 0) === Seq(NODE(1)))
+    assert(GraphAlgorithms.nodesWithInDegree(g, 0) === Set(NODE(1)))
   }
 
   test("topologicalSort returns nodes in correct order") {
@@ -99,7 +105,10 @@ class GraphSuite extends FunSuite {
     val r = new Random(seed)
     val g = randomDAG(r, 20, 50)
     val ordering : Seq[NODE] = GraphAlgorithms.topologicalSort(g)
-    println("Ordering: %s".format(ordering))
+
+    g.nodes.foreach {
+      case n : NODE => assert(ordering.contains(n), "%s wasn't in the ordering".format(n))
+    }
 
     ordering.zipWithIndex.foreach {
       case (orderedLater : NODE, j : Int) =>
