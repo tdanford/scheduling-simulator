@@ -16,8 +16,8 @@
 package org.bdgenomics.scheduling
 
 import GraphAlgorithms._
-
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 trait Edge[Node] {
   def from : Node
@@ -29,15 +29,19 @@ case class NODE( name : Int ) {}
 
 trait DirectedGraph[NodeType,EdgeType <: Edge[NodeType]] {
 
-  def nodes : Seq[NodeType]
+  def nodes : Iterable[NodeType]
 
   def addNodes(nodes : Seq[NodeType]) : DirectedGraph[NodeType,EdgeType]
   def addEdges(edges : Seq[EdgeType]) : DirectedGraph[NodeType,EdgeType]
 
   def outEdges(node : NodeType) : Iterable[EdgeType]
+  def inEdges(node : NodeType) : Iterable[EdgeType]
+
+  def neighbors( nFrom : NodeType ) : Iterable[NodeType] =
+    outEdges(nFrom).map(_.to)
 
   def areNeighbors( nFrom : NodeType, nTo : NodeType ) : Boolean =
-    outEdges(nFrom).find( _.to == nTo ).nonEmpty
+    outEdges(nFrom).exists( _.to == nTo )
 }
 
 trait Visitor[T] {
@@ -58,20 +62,46 @@ class Collector[T] extends Visitor[T] {
 
 class BFS[N, E<:Edge[N]]( graph : DirectedGraph[N, E] ) {
 
+  import GraphAlgorithms.neighbors
+
   def visitNodes( visitor : Visitor[N], startSet : Seq[N] )  = {
     @tailrec def visitNext( visited : Set[N], current : Seq[N] ) {
-      val continue : Boolean = current.forall( visitor.visit )
+      val continue : Boolean = current.nonEmpty && current.forall( visitor.visit )
       if(continue) {
-        val nextVisited = visited ++ current
-        val next = current.flatMap(
-          n => graph.outEdges(n).map(e => e.to).filter( n => !nextVisited.contains(n)) )
-        if(next.nonEmpty) {
-          visitNext( nextVisited, next )
-        }
+        val nextVisited : Set[N] = visited ++ current
+        val next : Seq[N] = neighbors(graph, current).filter(!nextVisited.contains(_))
+        visitNext( nextVisited, next )
       }
     }
 
     visitNext( Set(), startSet )
+  }
+
+}
+
+class TopoSort[N, E<:Edge[N]]( graph : DirectedGraph[N, E] ) {
+
+  def visitNodes( visitor : Visitor[N] )  = {
+
+    def uncounter( nodes : Seq[N] ) : ((Int, N)) => (Int, N) =
+      (pair : (Int, N)) =>
+        (pair._1 - nodes.count(_ == pair._2), pair._2)
+
+    @tailrec def acc( incoming : Seq[(Int, N)] ) {
+      incoming takeWhile(_._1 == 0) match {
+        case Nil => Nil
+        case ns : Seq[(Int, N)] =>
+          if(ns.map(_._2).forall(visitor.visit)) {
+            val nbrs: Seq[N] = ns.flatMap { case (count: Int, n: N) => graph.neighbors(n)}
+            acc(incoming.drop(ns.size).map(uncounter(nbrs)).sortBy(_._1))
+          }
+      }
+    }
+
+    val incoming : Seq[(Int, N)] =
+      graph.nodes.map( n => (GraphAlgorithms.inDegree(graph, n), n) ).toSeq.sortBy(_._1)
+
+    acc( incoming )
   }
 
 }
@@ -84,17 +114,18 @@ object GraphAlgorithms {
   def outDegree[N, E <: Edge[N]]( g : DirectedGraph[N, E], n : N) : Int =
     g.outEdges(n).size
 
-  def nodesWithInDegree[N, E<:Edge[N]](g : DirectedGraph[N, E], degree : Int) : Seq[N] =
+  def nodesWithInDegree[N, E<:Edge[N]](g : DirectedGraph[N, E], degree : Int) : Iterable[N] =
     g.nodes.filter( n => inDegree(g, n) == degree )
 
-  def outEdges[N, E<:Edge[N]](g : DirectedGraph[N, E], nodes : Seq[N]) : Seq[N] =
-    nodes.flatMap(g.outEdges).map(_.to).distinct
+  def outEdges[N, E<:Edge[N]](g : DirectedGraph[N, E], nodes : Seq[N]) : Seq[E] =
+    nodes.flatMap( g.outEdges ).distinct
+
+  def neighbors[N, E<:Edge[N]](g : DirectedGraph[N, E], nodes : Seq[N]) : Seq[N] =
+    nodes.flatMap(g.neighbors).distinct
 
   def topologicalSort[N, E <: Edge[N]](graph: DirectedGraph[N, E]): Seq[N] = {
     val collector = new Collector[N]()
-    val startSet = nodesWithInDegree(graph, 0)
-    if(startSet.isEmpty) throw new IllegalStateException("No starting set found")
-    new BFS(graph).visitNodes(collector, startSet)
+    new TopoSort(graph).visitNodes(collector)
     collector.list
   }
 
@@ -102,21 +133,29 @@ object GraphAlgorithms {
 
 object Graph {
 
-  def apply[NodeType, EdgeType <: Edge[NodeType]](edges : EdgeType*) : DirectedGraph[NodeType, EdgeType] =
-    MemoryDirectedGraph(edges.distinct.groupBy(_.from))
+  def apply[NodeType,EdgeType <: Edge[NodeType]](nodes : Seq[NodeType], edges : Seq[EdgeType]) : DirectedGraph[NodeType, EdgeType] =
+    MemoryDirectedGraph(nodes.toSet, edges.distinct.groupBy(_.from))
+
+  def apply[NodeType, EdgeType <: Edge[NodeType]](edges : Seq[EdgeType]) : DirectedGraph[NodeType, EdgeType] = {
+    val nodes : Set[NodeType] = edges.flatMap( e => Seq(e.from, e.to) ).toSet
+    MemoryDirectedGraph(nodes, edges.distinct.groupBy(_.from))
+  }
 }
 
-case class MemoryDirectedGraph[NodeType, EdgeType <: Edge[NodeType]](adjacencies : Map[NodeType, Seq[EdgeType]])
+case class MemoryDirectedGraph[NodeType, EdgeType <: Edge[NodeType]](nodes : Set[NodeType],
+                                                                     adjacencies : Map[NodeType, Seq[EdgeType]])
   extends DirectedGraph[NodeType, EdgeType] {
 
-  override def nodes : Seq[NodeType] = adjacencies.keys.toSeq
-
-  override def addNodes(nodes: Seq[NodeType]): DirectedGraph[NodeType, EdgeType] =
-    MemoryDirectedGraph(adjacencies ++
-      nodes.filter(!adjacencies.contains(_)).map(n => (n, Seq())).toMap )
+  override def addNodes(newNodes: Seq[NodeType]): DirectedGraph[NodeType, EdgeType] =
+    MemoryDirectedGraph(nodes ++ newNodes, adjacencies)
 
   override def outEdges(node: NodeType): Iterable[EdgeType] =
     adjacencies.getOrElse(node, Iterable())
+
+  override def inEdges(node : NodeType) : Iterable[EdgeType] =
+    adjacencies.flatMap {
+      case (n : NodeType, es : Seq[EdgeType]) => es.filter( _.to == node )
+    }
 
   override def addEdges(edges: Seq[EdgeType]): DirectedGraph[NodeType, EdgeType] = {
     val existingFlat : Seq[EdgeType] = adjacencies.toSeq.flatMap( _._2 )
@@ -126,7 +165,11 @@ case class MemoryDirectedGraph[NodeType, EdgeType <: Edge[NodeType]](adjacencies
     val newMap : Map[NodeType, Seq[EdgeType]] =
       (existingFlat ++ newFlat).distinct.groupBy( _.from )
 
-    MemoryDirectedGraph(newMap)
+    val newNodes = edges.flatMap(e => Seq(e.from, e.to)).distinct
+
+    MemoryDirectedGraph(nodes ++ newNodes, newMap)
   }
+
+  override def toString: String = adjacencies.toString
 }
 
