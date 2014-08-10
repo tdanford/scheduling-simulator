@@ -53,29 +53,56 @@ trait StatefulScheduler extends Scheduler with Stateful {
  * @param resourceTracker The scheduler state indicating the history of each resource available.
  * @param jobTracker The scheduler state indicating the history of each task and job
  */
-class GraphScheduler(val provider : Provider,
+class GraphScheduler(val currentTime : Long,
+                     val params : Parameters,
+                     val provider : Provider,
                      val component : Component,
                      val tasks : TaskGraph,
                      val resourceTracker : Tracker[Resource],
                      val jobTracker : Tracker[Job]) extends StatefulScheduler {
 
   override def blankScheduler: StatefulScheduler =
-    new GraphScheduler(provider, component, tasks, Tracker[Resource](), Tracker[Job]())
+    new GraphScheduler(0, params, provider, component, tasks, Tracker[Resource](), Tracker[Job]())
 
   override def updateState(e: Event): StatefulScheduler = e match {
 
     case _ =>
-      new GraphScheduler( provider, component, tasks,
+      new GraphScheduler( e.time, params, provider, component, tasks,
         resourceTracker.updateState(e),
         jobTracker.updateState(e) )
   }
 
+  private def scheduleNewResource() : Event =
+    provider.createResource()
+
+  private def scheduleTaskOnResource( task : Task, resource : Resource ) : Event = ???
+
+  private def scheduleTask( task : Task ) : Event = {
+    val resourcesInUse : Set[Resource] =
+      jobTracker.findOpen().map(j => jobTracker.events(j)._1).flatMap {
+        case JobStarted(time, job, resource) => Some(resource)
+        case _ => None
+      }.toSet
+
+    val allResources : Set[Resource] = resourceTracker.findOpen().toSet
+
+    val availableResources : Set[Resource] = allResources -- resourcesInUse
+
+    availableResources.headOption.map(scheduleTaskOnResource(task, _)).getOrElse(scheduleNewResource())
+  }
+
   override def findNextEvent(history: EventHistory, params: Parameters): Option[Event] = {
 
+    def finishedTask( interval : (Event, Option[Event]) ) : Option[Task] =
+      interval._2.flatMap {
+        case JobSucceeded(time, job) => Some(job.task)
+        case _ => None
+      }
+
+    val finishedTasks : Set[Task] = jobTracker.findClosed().flatMap(j=> finishedTask(jobTracker.events(j))).toSet
     val topo : Seq[Task] = GraphAlgorithms.topologicalSort(tasks)
+    val pending : Seq[Task] = topo.dropWhile(finishedTasks.contains)
 
-    //val unfinished : Seq[Task] = topo.filter
-
-    None
+    pending.headOption.map(scheduleTask)
   }
 }
