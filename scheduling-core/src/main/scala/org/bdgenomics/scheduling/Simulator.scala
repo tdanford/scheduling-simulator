@@ -15,6 +15,8 @@
  */
 package org.bdgenomics.scheduling
 
+import org.bdgenomics.scheduling.utils.{JavaRNG, RandomNumberGenerator}
+
 import scala.annotation.tailrec
 import scala.math._
 

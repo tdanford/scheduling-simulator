@@ -15,6 +15,8 @@
  */
 package org.bdgenomics.scheduling
 
+import org.bdgenomics.scheduling.algorithms.{GraphAlgorithms, Edge, DirectedGraph}
+
 case class TEdge(from : Task, to: Task) extends Edge[Task] {}
 
 trait TaskGraph extends DirectedGraph[Task,TEdge] {}

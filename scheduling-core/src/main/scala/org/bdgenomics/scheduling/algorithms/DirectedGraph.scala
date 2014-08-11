@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.scheduling
+package org.bdgenomics.scheduling.algorithms
 
-import GraphAlgorithms._
 import scala.annotation.tailrec
-import scala.collection.mutable
 
 trait Edge[Node] {
   def from : Node
@@ -62,7 +60,7 @@ class Collector[T] extends Visitor[T] {
 
 class BFS[N, E<:Edge[N]]( graph : DirectedGraph[N, E] ) {
 
-  import GraphAlgorithms.neighbors
+  import org.bdgenomics.scheduling.algorithms.GraphAlgorithms.neighbors
 
   def visitNodes( visitor : Visitor[N], startSet : Seq[N] )  = {
     @tailrec def visitNext( visited : Set[N], current : Seq[N] ) {

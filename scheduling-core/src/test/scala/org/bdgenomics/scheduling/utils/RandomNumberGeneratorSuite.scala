@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.scheduling
+package org.bdgenomics.scheduling.utils
 
 import org.scalatest.FunSuite
 
