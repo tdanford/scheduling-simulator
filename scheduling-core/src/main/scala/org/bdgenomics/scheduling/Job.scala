@@ -18,7 +18,8 @@ package org.bdgenomics.scheduling
 case class Task(name : String, size : Int) {
 }
 
-case class Job(id : String, task : Task, timeStarted : Long) extends EventSource {
+case class Job(id : String, task : Task, resource : Resource, timeStarted : Long) extends EventSource {
+
   override def sampleNextEvent(history: EventHistory, params: Parameters): Option[Event] = {
     val jobCompletedTime = params.sampleJobCompleteTime(task.size)
     if (params.sampleJobFailure())
@@ -28,13 +29,13 @@ case class Job(id : String, task : Task, timeStarted : Long) extends EventSource
   }
 }
 
-case class JobStarted(time : Long, source : Job, resource : Resource) extends InitialEvent[Job](time, source) {}
+case class JobStarted(time : Long, job : Job, resource : Resource) extends InitialEvent[Job](time, job) {}
 
-case class JobKilled(time : Long, source : Job, scheduler : Scheduler) extends TerminalEvent[Job](time, source) {
+case class JobKilled(time : Long, job : Job, scheduler : Scheduler) extends TerminalEvent[Job](time, job) {
 }
 
-case class JobFailed(time : Long, source : Job) extends TerminalEvent[Job](time, source) {
+case class JobFailed(time : Long, job : Job) extends TerminalEvent[Job](time, job) {
 }
 
-case class JobSucceeded(time : Long, source : Job) extends TerminalEvent[Job](time, source) {
+case class JobSucceeded(time : Long, job : Job) extends TerminalEvent[Job](time, job) {
 }

@@ -24,8 +24,11 @@ class JobSuite extends FunSuite {
 
     val failureRate = 0.1 // if the default Parameters rate changes, need to update this
 
+    val testComponent = Component("test-component", 1.0)
+    val testRec = Resource("test-resource", testComponent, 0)
+
     val task = Task("test-task", 1)
-    val job = Job("test-job", task, 0)
+    val job = Job("test-job", task, testRec, 0)
 
     val failures = (0 until 10000).map {
       case i =>

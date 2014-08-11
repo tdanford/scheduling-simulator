@@ -72,11 +72,28 @@ class GraphScheduler(val currentTime : Long,
         jobTracker.updateState(e) )
   }
 
-  private def scheduleNewResource() : Event =
-    provider.createResource()
+  /**
+   * Request a new resource
+   * @return
+   */
+  private def scheduleNewResource() : Event = ???
 
+  /**
+   * Given a task and a resource, schedule the task on the resource.
+   *
+   * @param task
+   * @param resource
+   * @return
+   */
   private def scheduleTaskOnResource( task : Task, resource : Resource ) : Event = ???
 
+
+  /**
+   * Finds a resource on which to schedule the given task.
+   *
+   * @param task
+   * @return
+   */
   private def scheduleTask( task : Task ) : Event = {
     val resourcesInUse : Set[Resource] =
       jobTracker.findOpen().map(j => jobTracker.events(j)._1).flatMap {

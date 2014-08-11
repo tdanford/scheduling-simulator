@@ -62,7 +62,7 @@ class SimulatorSuite extends FunSuite {
 
     val testTask = Task("test-task", 1)
     val jobs : Seq[Job] = (0 until 100).map {
-      case i => Job("test_job_%d".format(i), testTask, 0)
+      case i => Job("test_job_%d".format(i), testTask, testRec, 0)
     }
 
     val jobStarts : Seq[JobStarted] = jobs.map {

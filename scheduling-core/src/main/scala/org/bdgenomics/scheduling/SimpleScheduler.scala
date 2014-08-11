@@ -128,7 +128,7 @@ class SimpleScheduler(provider : Provider,
       Leaf(Some(
         JobStarted(
           history.currentTime,
-          Job(createId(), nextTask.get, history.currentTime),
+          Job(createId(), nextTask.get, resourceTracker.events.keys.head, history.currentTime),
           resourceTracker.events.keys.head))),
       Leaf(Some(
         ShutdownEvent(history.currentTime, resourceTracker.events.keys.head))))

@@ -27,11 +27,9 @@ class TrackerSuite extends FunSuite {
   test("an InitalEvent and TerminalEvent cause a single entry to be created in the Tracker") {
     object TestStart extends InitialEvent[EventSource](10, TestEventSource) {
       override def time: Long = 10
-      override def source: EventSource = TestEventSource
     }
     object TestEnd extends TerminalEvent[EventSource](20, TestEventSource) {
       override def time: Long = 20
-      override def source: EventSource = TestEventSource
     }
 
     val eh = EventHistory(Seq(TestStart, TestEnd))
@@ -48,7 +46,6 @@ class TrackerSuite extends FunSuite {
   test("an InitialEvent causes a single, open entry to be created in the Tracker") {
     object TestStart extends InitialEvent[EventSource](10, TestEventSource) {
       override def time: Long = 10
-      override def source: EventSource = TestEventSource
     }
 
     object TestEvent extends Event {
@@ -70,7 +67,6 @@ class TrackerSuite extends FunSuite {
   test("a TerminalEvent without an InitialEvent throws an IllegalStateException") {
     object TestEnd extends TerminalEvent[EventSource](10, TestEventSource) {
       override def time: Long = 10
-      override def source: EventSource = TestEventSource
     }
 
     object TestEvent extends Event {

@@ -100,14 +100,14 @@ object StartEvent extends Event {
 
 abstract class IntervalEvent extends Event {}
 
-abstract class TerminalEvent[T <: EventSource](time : Long, val terminated : T) extends IntervalEvent {
+abstract class TerminalEvent[T <: EventSource](time : Long, val source : T) extends IntervalEvent {
   override def execute(sim : Simulator) : Option[Simulator] =
-    Some(sim.update( _.filter(src => src != terminated) ))
+    Some(sim.update( _.filter(src => src != source) ))
 }
 
-abstract class InitialEvent[T <: EventSource](time : Long, val started : T) extends IntervalEvent {
+abstract class InitialEvent[T <: EventSource](time : Long, val source : T) extends IntervalEvent {
   override def execute(sim : Simulator) : Option[Simulator] =
-    Some(sim.update(started +: _))
+    Some(sim.update(source +: _))
 }
 
 

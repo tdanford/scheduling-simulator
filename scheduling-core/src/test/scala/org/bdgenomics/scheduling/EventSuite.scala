@@ -24,8 +24,8 @@ class EventSuite extends FunSuite {
       override def sampleNextEvent(history: EventHistory, params: Parameters): Option[Event] = None
     }
 
-    case class TestInitialEvent(time : Long, source : EventSource)
-      extends InitialEvent[EventSource](time, source) {}
+    case class TestInitialEvent(time : Long, eventSource : EventSource)
+      extends InitialEvent[EventSource](time, eventSource) {}
 
     val testInitialEvent = TestInitialEvent(10, TestEventSource)
 
@@ -41,8 +41,8 @@ class EventSuite extends FunSuite {
       override def sampleNextEvent(history: EventHistory, params: Parameters): Option[Event] = None
     }
 
-    case class TestTerminalEvent(time : Long, source : EventSource)
-      extends TerminalEvent[EventSource](time, source) {}
+    case class TestTerminalEvent(time : Long, eventSource : EventSource)
+      extends TerminalEvent[EventSource](time, eventSource) {}
 
     val testEvent = TestTerminalEvent(10, TestEventSource)
 

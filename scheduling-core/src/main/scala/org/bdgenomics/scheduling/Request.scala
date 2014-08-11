@@ -67,3 +67,12 @@ case class ResourceRequest(time : Long,
   }
 }
 
+case class JobRequest(time : Long,
+                      requester : Scheduler,
+                      job : Job) extends Request {
+  def action : Simulator=>Option[Simulator] = {
+    case sim : Simulator =>
+      Some(sim.update( sources => job +: sources ))
+  }
+}
+

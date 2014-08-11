@@ -34,23 +34,23 @@ class Tracker[T <: EventSource](val events : Map[T, (InitialEvent[T], Option[Ter
   override def updateState(e: Event): Tracker[T] = {
     e match {
       case startEvent : InitialEvent[T] =>
-        events.get(startEvent.started) match {
+        events.get(startEvent.source) match {
           case None =>
-            new Tracker[T]( events ++ Seq(startEvent.started -> (startEvent, None) ) )
+            new Tracker[T]( events ++ Seq(startEvent.source -> (startEvent, None) ) )
 
           case Some((initial : InitialEvent[T], ended : Option[TerminalEvent[T]])) =>
-            throw new IllegalStateException("%s had already started by time %d".format(startEvent.started, startEvent.time))
+            throw new IllegalStateException("%s had already started by time %d".format(startEvent.source, startEvent.time))
         }
 
       case endEvent : TerminalEvent[T] =>
-        events.get(endEvent.terminated) match {
+        events.get(endEvent.source) match {
           case Some((initial : InitialEvent[T], None)) =>
-            new Tracker[T](events.updated(endEvent.terminated, (initial, Some(endEvent))))
+            new Tracker[T](events.updated(endEvent.source, (initial, Some(endEvent))))
 
           case Some((initial : InitialEvent[T], Some(terminal : TerminalEvent[T]))) =>
-            throw new IllegalStateException("%s had already had a terminal event by time %d".format(endEvent.terminated, endEvent.time))
+            throw new IllegalStateException("%s had already had a terminal event by time %d".format(endEvent.source, endEvent.time))
           case None =>
-            throw new IllegalStateException("%s had not started by time %d".format(endEvent.terminated, endEvent.time))
+            throw new IllegalStateException("%s had not started by time %d".format(endEvent.source, endEvent.time))
         }
 
       case _ => this
